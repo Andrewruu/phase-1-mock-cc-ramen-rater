@@ -1,112 +1,127 @@
-console.log("hello");
 
-// See all ramen images in the div with the id of ramen-menu.
-
-// When the page loads,
-// document.addEventListener("DOMContentLoaded", (event) => {
-
-// });
-
-// how to grab the ramen-menu div
 const ramenMenu = document.getElementById("ramen-menu");
+let idHolder = null
 
-// request the data from the server to get all the ramen objects.
 fetch("http://localhost:3000/ramens")
   .then((response) => response.json())
   .then((ramenArray) => {
-    // Then, display the image for each of the ramen using an img tag inside the #ramen-menu div.
-    // iterate through the data
+
     ramenArray.forEach((ramen) => {
-      appendRamenToMenu(ramen);
+      appendRamenToMenu(ramen)
     });
   });
 
 function appendRamenToMenu(ramenObj) {
-  // create image html element
-  const imageDomElement = document.createElement("img");
+  const image = document.createElement("img")
+  image.src = ramenObj.image
+  image.id = ramenObj.id
 
-  //  populate that with the image of the ramen
-  imageDomElement.src = ramenObj.image;
+  image.addEventListener("click", () => {
+    const imageRamen = document.querySelector('.detail-image')
+    const ramenName = document.querySelector(".name")
+    const restaurantName = document.querySelector(".restaurant")
+    const ramenRating = document.querySelector("#rating-display")
+    const comment = document.querySelector("#comment-display")
+    
+    ramenName.textContent = ramenObj.name
+    imageRamen.src = ramenObj.image
+    restaurantName.textContent = ramenObj.restaurant
+    ramenRating.textContent = ramenObj.rating
+    comment.textContent = ramenObj.comment
 
-  // add an event listener when the image is clicked...
-  imageDomElement.addEventListener("click", () => {
-    // CORE DELIVERABLE #2
+    idHolder = ramenObj.id
+  })
 
-    // Click on an image from the #ramen-menu div and see all the info about that ramen displayed inside the #ramen-detail div and where it says insert comment here and insert rating here.
-
-    // 1.need to target the image, name, and restaurant tags in the center, as well rating and comments
-    const posterImage = document.querySelector("#ramen-detail .detail-image");
-    // or const ramenDetail = document.getElementById('ramen-detail')
-    // ramenDetail.querySelector('img');
-    // ramenDetail.querySelector('.detail-image');
-
-    // individual tag elements
-    // 2. modify the src or textContent
-    posterImage.src = ramenObj.image;
-
-    // how to target + update name?
-    const posterName = document.querySelector("#ramen-detail .name");
-    posterName.textContent = ramenObj.name;
-
-    const posterRestaurant = document.querySelector(
-      "#ramen-detail .restaurant"
-    );
-    posterRestaurant.textContent = ramenObj.restaurant;
-
-    // rating
-    const ratingDisplay = document.querySelector("#rating-display");
-    ratingDisplay.textContent = ramenObj.rating;
-
-    // comment
-    const comment = document.querySelector("#comment-display");
-    comment.textContent = ramenObj.comment;
-  });
-
-  //  append
-  ramenMenu.append(imageDomElement);
+  ramenMenu.append(image)
 }
 
-// Core Deliverable #3
-// Create a new ramen after submitting the new-ramen form.
+const formEdit = document.querySelector("#edit-ramen");
+formEdit.addEventListener("submit", (event) => {
+  event.preventDefault()
 
-// Target the form
+  const ramenRating = document.querySelector("#rating-display")
+  const comment = document.querySelector("#comment-display")
+  
+  const newRating = event.target.editRating.value
+  const newComment = event.target.editComment.value
+
+  const newRamen = {
+    id: idHolder,
+    rating: newRating,
+    comment: newComment,
+  }
+  ramenRating.textContent = newRating
+  comment.textContent = newComment
+  editRamen(newRamen)
+})
+
+function editRamen(ramenObj){
+    fetch(`http://localhost:3000/ramens/${ramenObj.id}`,{
+      method: 'PATCH',
+      headers:{
+          'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(ramenObj)
+    })
+    .then(res => res.json())
+
+
+}
+
+const delBtn = document.createElement('button')
+delBtn.textContent = 'Delete'
+document.querySelector('#ramen-detail').appendChild(delBtn)
+delBtn.addEventListener('click', () =>{
+  deleteRamen(idHolder)
+})
+
+
+
 const form = document.querySelector("#new-ramen");
 
-// Attach Event Listener to form
+function deleteRamen(id){
+  fetch(`http://localhost:3000/ramens/${id}`,{
+      method: 'DELETE',
+      headers: {
+          'Content-Type': 'application/json'
+      }
+  })
+  .then(res => res.json())
+  
+  document.getElementById(`${id}`).remove()
+}
+
+
 form.addEventListener("submit", (event) => {
-  // event is gonna hold the data i need to create a new ramen obj
-  console.log("form submitted");
-  event.preventDefault();
-  // target by the input's "name"
-  const newRamenName = event.target.name.value;
+  event.preventDefault()
 
-  // or, by id:
-  // event.target['new-name'].value
+  const newRamenName = event.target.name.value
 
-  const newRestaurant = event.target["new-restaurant"].value;
-  const newImage = event.target["new-image"].value;
-  const newRating = event.target["new-rating"].value;
-  const newComment = event.target["new-comment"].value;
-  debugger;
-  // create the ramen object
+  const newRestaurant = event.target.restaurant.value
+  const newImage = event.target.image.value
+  const newRating = event.target.rating.value
+  const newComment = event.target["new-comment"].value
+
   const newRamen = {
-    // ??
     name: newRamenName,
     restaurant: newRestaurant,
     image: newImage,
     rating: newRating,
     comment: newComment,
-  };
+  }
 
-  // append it to ramen-menu, ramenMenu
-  // parent.append(newChild)
-  // createElement
-  // modify it accordingly....
-  // ramenMenu.append(??)
-  appendRamenToMenu(newRamen);
-});
+  createRamen(newRamen)
+  appendRamenToMenu(newRamen)
+})
 
-// Create new ramen whenever form is submitted
-// Add this new ramen to the ramen-menu at the top
 
-// The new ramen should be added to the#ramen-menu div. The new ramen does not need to persist; in other words, if you refresh the page, it's okay that the new ramen is no longer on the page.
+function createRamen(ramenObj){
+    fetch('http://localhost:3000/ramens',{
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+        body:JSON.stringify(ramenObj)
+      }) 
+}
